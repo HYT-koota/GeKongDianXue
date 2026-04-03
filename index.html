@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>手指点穴熄灭蜡烛</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a0a15 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+            overflow: hidden;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 30px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Camera preview - small and optional */
+        .camera-preview {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+
+        .camera-preview:hover {
+            opacity: 1;
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        /* Candle container */
+        #candleContainer {
+            width: 600px;
+            height: 600px;
+            border-radius: 20px;
+            background: linear-gradient(180deg, #1a1a2e 0%, #0d0d1a 100%);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
+            padding-bottom: 80px;
+            position: relative;
+        }
+
+        /* Ambient light effect */
+        #candleContainer::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle, rgba(255, 200, 100, 0.1) 0%, transparent 70%);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.5s ease;
+        }
+
+        #candleContainer.lit::before {
+            opacity: 1;
+        }
+
+        #candleCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        /* Status indicator */
+        .status-indicator {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .status-indicator.ready {
+            background: rgba(46, 213, 115, 0.2);
+            border: 1px solid rgba(46, 213, 115, 0.5);
+        }
+
+        .status-indicator.matched {
+            background: rgba(255, 193, 7, 0.2);
+            border: 1px solid rgba(255, 193, 7, 0.5);
+            animation: pulse 0.5s ease;
+        }
+
+        .status-indicator.waiting {
+            background: rgba(102, 126, 234, 0.2);
+            border: 1px solid rgba(102, 126, 234, 0.5);
+        }
+
+        .status-indicator.error {
+            background: rgba(245, 87, 108, 0.2);
+            border: 1px solid rgba(245, 87, 108, 0.5);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: translateX(-50%) scale(1); }
+            50% { transform: translateX(-50%) scale(1.05); }
+        }
+
+        /* Link to recording page */
+        .page-link {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            color: rgba(255, 255, 255, 0.5);
+            text-decoration: none;
+            font-size: 0.85em;
+            transition: color 0.3s ease;
+        }
+
+        .page-link:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        /* Reset button */
+        .reset-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: translateX(-50%) translateY(-2px);
+        }
+
+        /* Particle effect container */
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            overflow: hidden;
+        }
+
+        .particle {
+            position: absolute;
+            background: rgba(255, 200, 100, 0.6);
+            border-radius: 50%;
+            pointer-events: none;
+        }
+
+        /* Debug panel */
+        .debug-panel {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            width: 280px;
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 8px;
+            padding: 15px;
+            font-size: 12px;
+            color: #ccc;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .debug-panel.visible {
+            display: block;
+        }
+
+        .debug-panel h3 {
+            color: #fff;
+            margin-bottom: 10px;
+            font-size: 14px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding-bottom: 5px;
+        }
+
+        .debug-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 5px 0;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .debug-label {
+            color: #888;
+        }
+
+        .debug-value {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        .debug-value.high {
+            color: #f5576c;
+        }
+
+        .debug-value.good {
+            color: #2ed573;
+        }
+
+        .debug-toggle {
+            position: fixed;
+            top: 60px;
+            left: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .debug-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+    
+
+        #canvasOutput {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 160px;
+            height: 120px;
+            border-radius: 8px;
+            pointer-events: none;
+            transform: scaleX(-1);
+            display: none;
+            z-index: 25;
+        }
+
+        .test-toggle {
+            position: fixed;
+            top: 100px;
+            left: 20px;
+            padding: 8px 15px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            color: #fff;
+            font-size: 12px;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-toggle.active {
+            border-color: rgba(46, 213, 115, 0.8);
+            background: rgba(46, 213, 115, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div id="candleContainer" class="lit">
+            <canvas id="candleCanvas" width="600" height="600"></canvas>
+        </div>
+    </div>
+
+    <!-- Small camera preview -->
+    <div class="camera-preview">
+        <video id="videoElement" autoplay playsinline></video>
+    </div>
+
+    <!-- Status indicator -->
+    <div id="statusIndicator" class="status-indicator waiting">初始化中...</div>
+
+    <!-- Debug toggle button -->
+    <button id="debugToggle" class="debug-toggle">🔧 调试</button>
+    <button id="testModeToggle" class="test-toggle">Test Mode: OFF</button>
+
+    <!-- Debug panel -->
+    <div id="debugPanel" class="debug-panel">
+        <h3>调试信息</h3>
+        <div class="debug-row">
+            <span class="debug-label">标准手势:</span>
+            <span class="debug-value" id="debugStandard">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">录制次数:</span>
+            <span class="debug-value" id="debugRecordCount">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">轨迹点数:</span>
+            <span class="debug-value" id="debugPoints">0</span>
+        </div>
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+        <h3>匹配结果</h3>
+        <div class="debug-row">
+            <span class="debug-label">相似度得分:</span>
+            <span class="debug-value" id="debugSimilarity">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">速度得分:</span>
+            <span class="debug-value" id="debugSpeed">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">综合得分:</span>
+            <span class="debug-value" id="debugCombined">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">综合阈值:</span>
+            <span class="debug-value" id="debugThreshold">0.30</span>
+        </div>
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+        <h3>速度对比</h3>
+        <div class="debug-row">
+            <span class="debug-label">标准峰值:</span>
+            <span class="debug-value" id="debugStdPeak">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">当前峰值:</span>
+            <span class="debug-value" id="debugCurrPeak">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">峰值比例:</span>
+            <span class="debug-value" id="debugPeakRatio">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">标准平均:</span>
+            <span class="debug-value" id="debugStdAvg">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">当前平均:</span>
+            <span class="debug-value" id="debugCurrAvg">-</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">平均比例:</span>
+            <span class="debug-value" id="debugAvgRatio">-</span>
+        </div>
+        <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+        <h3>配置</h3>
+        <div class="debug-row">
+            <span class="debug-label">最小峰值比例:</span>
+            <span class="debug-value" id="debugMinPeak">0.30</span>
+        </div>
+        <div class="debug-row">
+            <span class="debug-label">最小平均比例:</span>
+            <span class="debug-value" id="debugMinAvg">0.30</span>
+        </div>
+    </div>
+
+    <!-- Link to recording page -->
+    <a href="record.html" class="page-link">录制标准动作</a>
+
+    <!-- Reset button -->
+    <button id="btnReset" class="reset-btn">🔄 重置蜡烛</button>
+
+    <!-- Hidden canvas for output -->
+    <canvas id="canvasOutput"></canvas>
+
+    <!-- Particle container for effects -->
+    <div class="particles" id="particles"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+    <script src="shared.js?v=9"></script>
+    <script src="app.js?v=9"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+segment_index,filename,label,notes,points,detection_ratio,matched,confidence,similarity
+1,segment_001.mp4,1,"fast+ghosting",11,0.0733,0,0.0000,0.0000
+2,segment_002.mp4,1,"fast+ghosting",13,0.0867,1,0.8479,0.6957
+3,segment_003.mp4,1,"fast+ghosting",22,0.1467,1,0.8458,0.6916
+4,segment_004.mp4,1,"fast+ghosting",22,0.1467,1,0.8532,0.7064
+5,segment_005.mp4,1,"fast+ghosting",18,0.1200,1,0.8900,0.7800
+6,segment_006.mp4,1,"fast+ghosting",28,0.1867,1,0.8904,0.7807
+7,segment_007.mp4,1,"fast+ghosting",26,0.1733,1,0.8333,0.6667
+8,segment_008.mp4,1,"fast+ghosting",20,0.1333,1,0.8511,0.7021
+9,segment_009.mp4,1,"fast+ghosting",14,0.0933,1,0.9246,0.8492
+10,segment_010.mp4,1,"fast+ghosting",16,0.1067,1,0.8425,0.6850
+11,segment_011.mp4,1,"fast+ghosting",10,0.0667,0,0.0000,0.0000
+12,segment_012.mp4,1,"slow",76,0.5067,1,0.8855,0.7711
+13,segment_013.mp4,1,"slow",47,0.3133,1,0.8932,0.7865
+14,segment_014.mp4,1,"slow",63,0.4200,1,0.9076,0.8152
+15,segment_015.mp4,1,"slow",49,0.3267,1,0.8938,0.7876
+16,segment_016.mp4,1,"slow",52,0.3467,1,0.8699,0.7398

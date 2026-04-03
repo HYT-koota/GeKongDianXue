@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>加载数据设置标准</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255,255,255, 0.05);
+            border-radius: 16px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+        }
+
+        h1 {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .file-upload {
+            margin-bottom: 30px;
+        }
+
+        .file-upload label {
+            display: block;
+            margin-bottom: 10px;
+            color: #aaa;
+        }
+
+        #fileInput {
+            width: 100%;
+            padding: 15px;
+            border: 2px dashed rgba(255,255,255, 0.2);
+            border-radius: 10px;
+            background: rgba(255,255,255, 0.05);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        #fileInput:hover {
+            border-color: rgba(79, 172, 254, 0.5);
+            background: rgba(255,255,255, 0.1);
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .info-panel {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            display: none;
+        }
+
+        .info-panel.visible {
+            display: block;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255, 0.1);
+        }
+
+        .info-label {
+            color: #888;
+        }
+
+        .info-value {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        .status {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: rgba(46, 213, 115, 0.3);
+        }
+
+        .status.error {
+            background: rgba(245, 87, 108, 0.3);
+        }
+
+        .links {
+            margin-top: 30px;
+            text-align: center;
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .links a {
+            color: #4facfe;
+            text-decoration: none;
+            padding: 12px 30px;
+            border: 1px solid rgba(79, 172, 254, 0.3);
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+
+        .links a:hover {
+            background: rgba(79, 172, 254, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 加载录制数据</h1>
+
+        <div class="file-upload">
+            <label>选择导出的 JSON 文件：</label>
+            <input type="file" id="fileInput" accept=".json">
+        </div>
+
+        <button id="btnLoad" class="btn" disabled>🔄 加载并保存标准</button>
+
+        <div id="status" class="status"></div>
+
+        <div id="infoPanel" class="info-panel">
+            <div style="margin-bottom: 15px; color: #fff; font-weight: 600;">加载的数据统计：</div>
+            <div class="info-row">
+                <span class="info-label">录制次数:</span>
+                <span class="info-value" id="statCount">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">平均轨迹点数:</span>
+                <span class="info-value" id="statPoints">-</span>
+            </div>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+            <div style="margin-bottom: 10px; color: #4facfe;">【平均值】</div>
+            <div class="info-row">
+                <span class="info-label">平均峰值速度:</span>
+                <span class="info-value" id="statAvgPeak">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">平均平均速度:</span>
+                <span class="info-value" id="statAvgAvg">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">峰值标准差:</span>
+                <span class="info-value" id="statPeakStd">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">平均标准差:</span>
+                <span class="info-value" id="statAvgStd">-</span>
+            </div>
+            <hr style="border:none; border-top:1px solid rgba(255,255,255,0.1); margin:10px 0;">
+            <div style="margin-bottom: 10px; color: #2ed573;">【中位数】</div>
+            <div class="info-row">
+                <span class="info-label">中位数峰值速度:</span>
+                <span class="info-value" id="statMedianPeak">-</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">中位数平均速度:</span>
+                <span class="info-value" id="statMedianAvg">-</span>
+            </div>
+        </div>
+
+        <div class="links">
+            <a href="index.html">🕯️ 前往主页面测试</a>
+        </div>
+    </div>
+
+    <script>
+        // Need to load shared.js for normalization
+    </script>
+    <script src="shared.js"></script>
+    <script>
+        const fileInput = document.getElementById('fileInput');
+        const btnLoad = document.getElementById('btnLoad');
+        const statusEl = document.getElementById('status');
+        const infoPanel = document.getElementById('infoPanel');
+
+        // Calculate median
+        function median(values) {
+            if (values.length === 0) return 0;
+            const sorted = [...values].sort((a, b) => a - b);
+            const mid = Math.floor(sorted.length / 2);
+            return sorted.length % 2 === 0
+                ? (sorted[mid - 1] + sorted[mid]) / 2
+                : sorted[mid];
+        }
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                try {
+                    const data = JSON.parse(event.target.result);
+                    displayData(data);
+                    btnLoad.disabled = false;
+                } catch (err) {
+                    statusEl.textContent = '文件解析失败: ' + err.message;
+                    statusEl.className = 'status error';
+                }
+            };
+            reader.readAsText(file);
+        });
+
+        function displayData(data) {
+            // Show statistics
+            document.getElementById('statCount').textContent = data.recordingCount;
+            document.getElementById('statPoints').textContent = data.statistics.avgPointCount.toFixed(1);
+            document.getElementById('statAvgPeak').textContent = data.statistics.avgPeakSpeed.toFixed(3);
+            document.getElementById('statAvgAvg').textContent = data.statistics.avgAvgSpeed.toFixed(3);
+            document.getElementById('statPeakStd').textContent = data.statistics.peakSpeedStdDev.toFixed(3);
+            document.getElementById('statAvgStd').textContent = data.statistics.avgSpeedStdDev.toFixed(3);
+
+            // Calculate median from individual recordings
+            const peakSpeeds = data.recordings.map(r => r.peakSpeed);
+            const avgSpeeds = data.recordings.map(r => r.avgSpeed);
+
+            const medianPeak = median(peakSpeeds);
+            const medianAvg = median(avgSpeeds);
+
+            document.getElementById('statMedianPeak').textContent = medianPeak.toFixed(3);
+            document.getElementById('statMedianAvg').textContent = medianAvg.toFixed(3);
+
+            infoPanel.classList.add('visible');
+            statusEl.textContent = '文件已加载，点击"加载并保存标准"';
+            statusEl.className = 'status success';
+
+            // Store data for later use
+            window.loadedData = {
+                recordings: data.recordings,
+                medianPeak,
+                medianAvg
+            };
+        }
+
+        btnLoad.addEventListener('click', () => {
+            if (!window.loadedData) {
+                alert('请先加载数据文件');
+                return;
+            }
+
+            // IMPORTANT: Use full trajectories, not samples!
+            // The recorded data has trajectorySample but we need to reconstruct full trajectories
+            // Since sample only has every 5th point, we need to reconstruct approximate full trajectories
+
+            // For simplicity, we'll use the median recording as the "template" and normalize it
+            const medianPeak = window.loadedData.medianPeak;
+            const medianAvg = window.loadedData.medianAvg;
+
+            // Find the recording closest to median
+            const peakSpeeds = window.loadedData.recordings.map(r => r.peakSpeed);
+            const avgSpeeds = window.loadedData.recordings.map(r => r.avgSpeed);
+
+            let closestIndex = 0;
+            let minDiff = Infinity;
+            for (let i = 0; i < peakSpeeds.length; i++) {
+                const diff = Math.abs(peakSpeeds[i] - medianPeak) + Math.abs(avgSpeeds[i] - medianAvg);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    closestIndex = i;
+                }
+            }
+
+            // Use the closest recording's trajectory
+            // The export data has trajectorySample but we need to normalize based on that
+            const closestRecording = window.loadedData.recordings[closestIndex];
+
+            // Create a normalized trajectory from the sample
+            // The sample has points at indices 0, 5, 10, 15, 20...
+            const sample = closestRecording.trajectorySample || [];
+            if (sample.length === 0) {
+                alert('错误：导出数据中没有轨迹样本！');
+                return;
+            }
+
+            // Use the sample trajectory as-is (it's already relative coordinates)
+            // We'll normalize it properly
+            const normalizedTrajectory = TrajectoryNormalizer.normalize(sample);
+
+            // Create standard gesture using MEDIAN values
+            const standardGesture = {
+                normalizedTrajectory: normalizedTrajectory,
+                speedProfile: {
+                    peakSpeed: medianPeak,
+                    avgSpeed: medianAvg
+                },
+                speedBuffer: {
+                    peakBuffer: 0,
+                    avgBuffer: 0,
+                    peakStdDev: 0,
+                    avgStdDev: 0
+                },
+                recordingCount: window.loadedData.recordings.length,
+                createdAt: Date.now()
+            };
+
+            // Save to localStorage
+            localStorage.setItem('standardGesture', JSON.stringify(standardGesture));
+
+            statusEl.textContent = '✅ 标准手势已保存！使用中位数: 峰值=' + standardGesture.speedProfile.peakSpeed.toFixed(3) + ', 平均=' + standardGesture.speedProfile.avgSpeed.toFixed(3);
+            statusEl.className = 'status success';
+
+            console.log('保存的标准手势:', standardGesture);
+            console.log('归一化轨迹点数:', normalizedTrajectory.length);
+
+            setTimeout(() => {
+                alert('标准手势已保存！\n\n使用中位数作为标准：\n峰值速度: ' + standardGesture.speedProfile.peakSpeed.toFixed(3) + '\n平均速度: ' + standardGesture.speedProfile.avgSpeed.toFixed(3) + '\n归一化轨迹点数: ' + normalizedTrajectory.length + '\n\n现在可以前往主页面测试了！');
+            }, 500);
+        });
+    </script>
+</body>
+</html>

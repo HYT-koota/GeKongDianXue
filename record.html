@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>录制标准点穴动作</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(255, 200, 100, 0.5);
+        }
+
+        .subtitle {
+            color: #aaa;
+            margin-bottom: 30px;
+            font-size: 0.9em;
+        }
+
+        .main-container {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .video-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #videoContainer {
+            position: relative;
+            width: 480px;
+            height: 360px;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+        }
+
+        #videoElement {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transform: scaleX(-1);
+        }
+
+        #canvasOutput {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            transform: scaleX(-1);
+        }
+
+        .info-section {
+            width: 480px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 25px;
+        }
+
+        .section-title {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: #ddd;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+        }
+
+        .record-count {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .record-count .number {
+            font-size: 4em;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .record-count .label {
+            color: #aaa;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .btn-start-record {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-start-record:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-stop-record {
+            background: linear-gradient(135deg, #f5576c 0%, #f093fb 100%);
+            color: white;
+        }
+
+        .btn-stop-record:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-finish {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-finish:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(17, 153, 142, 0.4);
+        }
+
+        .btn-reset {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-reset:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(79, 172, 254, 0.4);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .status {
+            padding: 15px 20px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            font-size: 0.95em;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .status.recording {
+            background: rgba(245, 87, 108, 0.3);
+            animation: pulse 1s infinite;
+        }
+
+        .status.waiting {
+            background: rgba(102, 126, 234, 0.3);
+        }
+
+        .status.success {
+            background: rgba(46, 213, 115, 0.3);
+        }
+
+        .status.warning {
+            background: rgba(255, 193, 7, 0.3);
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .target-count {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .target-count label {
+            color: #aaa;
+        }
+
+        .target-count input {
+            width: 80px;
+            padding: 8px 12px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            font-size: 1em;
+            text-align: center;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 25px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .stats {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+
+        .stats-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 6px;
+        }
+
+        .stats-label {
+            color: #888;
+        }
+
+        .stats-value {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        .link-section {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .link-section a {
+            color: #4facfe;
+            text-decoration: none;
+            font-size: 1.1em;
+        }
+
+        .link-section a:hover {
+            text-decoration: underline;
+        }
+
+        /* Data table */
+        .data-section {
+            width: 480px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8em;
+        }
+
+        .data-table th,
+        .data-table td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .data-table th {
+            color: #888;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            background: rgba(0, 0, 0, 0.3);
+        }
+
+        .data-table td {
+            color: #ccc;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table .delete-btn {
+            color: #f5576c;
+            cursor: pointer;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: background 0.2s;
+        }
+
+        .data-table .delete-btn:hover {
+            background: rgba(245, 87, 108, 0.2);
+        }
+
+        .export-section {
+            margin-top: 15px;
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn-export {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+        }
+
+        .btn-export:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 3px 15px rgba(79, 172, 254, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <h1>🎬 录制标准点穴动作</h1>
+    <p class="subtitle">录制 10-20 次动作，系统将计算平均值作为标准</p>
+
+    <div class="main-container">
+        <div class="video-section">
+            <div id="videoContainer">
+                <video id="videoElement" autoplay playsinline></video>
+                <canvas id="canvasOutput"></canvas>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <h2 class="section-title">录制进度</h2>
+
+            <div class="record-count">
+                <div class="number" id="recordCount">0</div>
+                <div class="label">已录制次数</div>
+            </div>
+
+            <div class="target-count">
+                <label>目标次数:</label>
+                <input type="number" id="targetCount" value="15" min="5" max="30">
+            </div>
+
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill"></div>
+            </div>
+
+            <div class="controls">
+                <button id="btnStart" class="btn-start-record" disabled>▶️ 开始录制本次动作</button>
+                <button id="btnStop" class="btn-stop-record" disabled>⏹️ 停止录制</button>
+            </div>
+
+            <div class="controls">
+                <button id="btnFinish" class="btn-finish" disabled>✅ 完成录制</button>
+                <button id="btnReset" class="btn-reset">🔄 重置</button>
+            </div>
+
+            <div id="status" class="status">等待摄像头初始化...</div>
+
+            <div class="stats" id="stats" style="display: none;">
+                <div style="margin-bottom: 10px; color: #fff; font-weight: 600;">录制统计:</div>
+                <div class="stats-row">
+                    <span class="stats-label">轨迹点数 (平均):</span>
+                    <span class="stats-value" id="statPoints">-</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">峰值速度 (平均):</span>
+                    <span class="stats-value" id="statPeakSpeed">-</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">平均速度 (平均):</span>
+                    <span class="stats-value" id="statAvgSpeed">-</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">峰值速度 (标准差):</span>
+                    <span class="stats-value" id="statPeakStd">-</span>
+                </div>
+                <div class="stats-row">
+                    <span class="stats-label">平均速度 (标准差):</span>
+                    <span class="stats-value" id="statAvgStd">-</span>
+                </div>
+            </div>
+
+            <!-- Data table section -->
+            <div class="data-section" id="dataSection" style="display: none;">
+                <h2 class="section-title" style="font-size: 1.1em; margin-bottom: 15px;">录制数据详情</h2>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>轨迹点数</th>
+                            <th>峰值速度</th>
+                            <th>平均速度</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dataTableBody"></tbody>
+                </table>
+                <div class="export-section">
+                    <button class="btn-export" id="btnExport">📥 导出数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="link-section">
+        录制完成后，<a href="index.html">点击这里前往主页面</a>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.min.js"></script>
+    <script src="shared.js?v=9"></script>
+    <script src="record.js?v=8"></script>
+</body>
+</html>
